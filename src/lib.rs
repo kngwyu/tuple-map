@@ -10,39 +10,116 @@
 //!     assert_eq!(y, 9);
 //! }
 //! ```
+//!
+//! **Notes**
+//! This library defines different trait depending on the length of tuple,
+//! like `TupleMap1`, `TupleMap2`,..., by macro, so same docs are generated for each trait.
 
 macro_rules! impl_tuple_map {
     ($trait: ident, $($name: ident)+ , $($item: ident)+, $($self: ident)+ , $($other: ident)+) => {
         pub trait $trait {
             type Item;
 
+            /// Checks if every element of tuple matches a predicate, like
+            /// [`std::iter::Iterator::all`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.all).
+            /// 
+            /// This method take a closure returns `true` or `false`, and tries to apply this
+            /// closure to all elements of tuple. If and only if all of them returns `true`,
+            /// this method return `true`.
+            /// # Examples
+            /// ```ignore
+            /// let a = (3, 9, 12, ...);
+            /// assert!(a.all(|x| x % 3 == 0));
+            /// assert!(!a.all(|x| x % 4 == 0));
+            /// ```
             fn all<F>(self, f: F) -> bool
             where
                 F: FnMut(Self::Item) -> bool;
 
+            /// Checks if any element of tuple matches a predicate, like
+            /// [`std::iter::Iterator::any`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.all).
+            /// 
+            /// This method take a closure returns `true` or `false`, and tries to apply this
+            /// closure to all elements of tuple. If any of them returns `true`,
+            /// this method return `true`.
+            /// # Examples
+            /// ```ignore
+            /// let a = (3, 9, 12, ...);
+            /// assert!(a.any(|x| x % 4 == 0));
+            /// assert!(!a.any(|x| x % 7 == 0));
+            /// ```
             fn any<F>(self, f: F) -> bool
             where
                 F: FnMut(Self::Item) -> bool;
-            
+
+            /// Takes `&(a, a, a, ...)` and returns `(&a, &a, &a, ...)`
+            /// # Examples
+            /// ```ignore
+            /// let a = (3, 3, 3, ...);
+            /// assert_eq!(a.by_ref(), (&3, &3, &3, ...));
+            /// ```
             fn by_ref(&self) -> ($(&Self::$item, )*);
 
+            /// Takes `&mut (a, a, a, ...)` and returns `(&mut a, &mut a, &mut a, ...)`
+            /// # Examples
+            /// ```ignore
+            /// let a = (3, 3, 3, ...);
+            /// assert_eq!(a.by_ref(), (&mut 3, &mut 3, &mut 3, ...));
+            /// ```
             fn by_ref_mut(&mut self) -> ($(&mut Self::$item, )*);
 
+            /// Takes `&(a, a, a, ...)` and returns `(a, a, a, ...)` 
+            /// # Examples
+            /// ```ignore
+            /// let a = (3, 3, 3, ..,);
+            /// assert_eq!(a, a.clone());
+            /// ```
             fn cloned(&self) -> ($(Self::$item, )*)
             where
                 Self::Item: Clone
             {
                 self.by_ref().map(|x| x.clone())
             }
-            
+
+            /// Takes a closure `f` and applies it to all elements to tuple, and produce single value.
+            /// This is similar to [`std::iter::Iterator::fold`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.fold)
+            /// # Example
+            /// ```ignore
+            /// let a = (3, 4, 5, ...)
+            /// let sum = a.fold(0, |sum, x| sum + x);
+            /// ```
             fn fold<B, F>(self, init: B, f: F) -> B
             where
                 F: FnMut(B, Self::Item) -> B;
-            
+
+            /// Takes a closure `f` and applies it to all elements to tuple.
+            /// `f` can cause side effect(because it's `FnMut`), but this method return nothing.
+            /// Similar to [`std::iter::Iterator::for_each`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.for_each)
+            /// # Example
+            /// ```ignore
+            /// let a = (3, 4, 5, ...);
+            /// let mut sum = 0;
+            /// a.for_each(|x| sum += x);
+            /// ```
             fn for_each<F>(self, f: F)
             where
                 F: FnMut(Self::Item) -> ();
-            
+
+            /// Convert tuple into Vec.
+            /// # Example
+            /// ```ignore
+            /// let a = (3, 4, 5, ...)
+            /// assert_eq(a.into_vec(), vec![3, 4, 5, ...])
+            /// ```
+            fn into_vec(self) -> Vec<Self::Item>;
+
+            /// Takes a closure `f` and (a, a, a, ...), then returns (f(a), f(a), f(a), ...).
+            /// Similar to [`std::iter::Iterator::map`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.map).
+            /// # Example
+            /// ```ignore
+            /// let a = (3, 4, 5, ...);
+            /// assert_eq!(a.map(|x| x * 2), (6, 8, 10, ...));
+            /// ```
             fn map<B, F>(self, f: F) -> ($($other, )*)
             where
                 F: FnMut(Self::Item) -> B;
@@ -94,6 +171,13 @@ macro_rules! impl_tuple_map {
             {
                 let ($($name,)*) = self;
                 $(f($name);)*
+            }
+
+            fn into_vec(self) -> Vec<Self::Item> {
+                let ($($name,)*) = self;
+                let mut v = Vec::new();
+                $(v.push($name);)*
+                v
             }
             
             fn map<B, F>(self, mut f: F) -> ($($other, )*)
@@ -248,6 +332,7 @@ mod tests {
     #[test]
     fn test_by_ref_mut() {
         let mut a = (3, 3, 3);
+        assert_eq!(a.by_ref_mut(), (&mut 3, &mut 3, &mut 3));
         a.by_ref_mut().for_each(|x| *x += 5);
         assert_eq!(a, (8, 8, 8))
     }
@@ -255,6 +340,7 @@ mod tests {
     #[test]
     fn test_cloned() {
         let mut a = (3, 3, 3);
+        assert_eq!(a, a.cloned());
         let b = a.cloned().map(|x| x * 3);
         a.by_ref_mut().for_each(|x| *x *= 3);
         assert_eq!(b, a.cloned())
@@ -267,6 +353,10 @@ mod tests {
         assert_eq!(sum, 12)
     }
 
+    #[test]
+    fn test_into_vec() {
+        assert_eq!((3, 3, 3).into_vec(), vec![3, 3, 3]);
+    }
     #[test]
     fn test_map() {
         let a = (3, 3, 3);
