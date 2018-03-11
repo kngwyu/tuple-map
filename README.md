@@ -1,7 +1,7 @@
 # tuple-map
 [![Crates.io: tuple-map](http://meritbadge.herokuapp.com/tuple-map)](https://crates.io/crates/tuple-map)
 [![Build Status](https://travis-ci.org/kngwyu/tuple-map.svg?branch=master)](https://travis-ci.org/kngwyu/tuple-map)
-[![Documentation](https://docs.rs/tuple_map/badge.svg)](https://docs.rs/tuple_map)
+[![Documentation](https://docs.rs/tuple-map/badge.svg)](https://docs.rs/tuple-map)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 This library provides iterator-like utilities for `map`, `fold`, `for_each`, and etc., for tuple.
