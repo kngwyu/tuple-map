@@ -10,6 +10,7 @@ max_items = 16
   items = (1..i).map { |_| 'Item'}.join(" ")
   p1 = (1..i).map { |_| param1}.join(" ")
   p2 = (1..i).map { |_| param2}.join(" ")
+  impl += indent + "a, \n"
   impl += indent + names + ", \n"
   impl += indent + items + ",\n"
   impl += indent + p1 + ", \n"

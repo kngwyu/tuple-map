@@ -16,7 +16,7 @@
 //! like `TupleMap1`, `TupleMap2`,..., by macro, so same docs are generated for each trait.
 
 macro_rules! impl_tuple_map {
-    ($trait: ident, $($name: ident)+ , $($item: ident)+, $($self: ident)+ , $($other: ident)+) => {
+    ($trait: ident, $first:ident, $($name: ident)+ , $($item: ident)+, $($self: ident)+ , $($other: ident)+) => {
         pub trait $trait {
             type Item;
 
@@ -81,6 +81,19 @@ macro_rules! impl_tuple_map {
                 self.by_ref().map(|x| x.clone())
             }
 
+            /// Find the leftest element which satisfies `f` and returns it.
+            /// # Example
+            /// ```ignore
+            /// let mut a = (3, 3, 5, 3, ...);
+            /// if let Some(x) = a.by_ref_mut().find(|&&mut x| x == 5) {
+            ///     *x = 3
+            /// }
+            /// assert!(a.same());
+            /// ```
+            fn find<F>(self, f: F) -> Option<Self::Item>
+            where
+                F: FnMut(&Self::Item) -> bool;
+
             /// Takes a closure `f` and applies it to all elements to tuple, and produce single value.
             /// This is similar to [`std::iter::Iterator::fold`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.fold)
             /// # Example
@@ -123,6 +136,16 @@ macro_rules! impl_tuple_map {
             fn map<B, F>(self, f: F) -> ($($other, )*)
             where
                 F: FnMut(Self::Item) -> B;
+
+            /// Checks if all elements of the tuple is same.
+            /// # Example
+            /// ```ignore
+            /// let a = (3, 3, 3, ...);
+            /// assert!(a.same());
+            /// ```
+            fn same(self) -> bool
+            where
+                Self::Item: PartialEq;
         }
         
         impl<T> $trait for ($($self, )*) {
@@ -154,6 +177,15 @@ macro_rules! impl_tuple_map {
             fn by_ref_mut(&mut self) -> ($(&mut Self::$item, )*) {
                 let ($(ref mut $name,)*) = *self;
                 ($($name,)*)
+            }
+
+            fn find<F>(self, mut f: F) -> Option<Self::Item>
+            where
+                F: FnMut(&Self::Item) -> bool
+            {
+                let ($($name,)*) = self;
+                $(if f(&$name) { return Some($name) })*
+                None
             }
             
             fn fold<B, F>(self, mut init: B, mut f: F) -> B
@@ -187,6 +219,15 @@ macro_rules! impl_tuple_map {
                 let ($($name,)*) = self;
                 ($(f($name),)*)
             }
+
+            fn same(self) -> bool
+            where
+                Self::Item: PartialEq
+            {
+                let ($($name,)*) = self;
+                $(if $name != $first { return false } )*
+                true
+            }
         }
     };
 }
@@ -194,12 +235,14 @@ macro_rules! impl_tuple_map {
 impl_tuple_map!{
     TupleMap1,
     a,
+    a,
     Item,
     T,
     B
 }
 impl_tuple_map!{
     TupleMap2,
+    a,
     a b,
     Item Item,
     T T,
@@ -207,6 +250,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap3,
+    a,
     a b c,
     Item Item Item,
     T T T,
@@ -214,6 +258,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap4,
+    a,
     a b c d,
     Item Item Item Item,
     T T T T,
@@ -221,6 +266,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap5,
+    a,
     a b c d e,
     Item Item Item Item Item,
     T T T T T,
@@ -228,6 +274,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap6,
+    a,
     a b c d e f,
     Item Item Item Item Item Item,
     T T T T T T,
@@ -235,6 +282,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap7,
+    a,
     a b c d e f g,
     Item Item Item Item Item Item Item,
     T T T T T T T,
@@ -242,6 +290,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap8,
+    a,
     a b c d e f g h,
     Item Item Item Item Item Item Item Item,
     T T T T T T T T,
@@ -249,6 +298,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap9,
+    a,
     a b c d e f g h i,
     Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T,
@@ -256,6 +306,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap10,
+    a,
     a b c d e f g h i j,
     Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T,
@@ -263,6 +314,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap11,
+    a,
     a b c d e f g h i j k,
     Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T,
@@ -270,6 +322,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap12,
+    a,
     a b c d e f g h i j k l,
     Item Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T T,
@@ -277,6 +330,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap13,
+    a,
     a b c d e f g h i j k l m,
     Item Item Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T T T,
@@ -284,6 +338,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap14,
+    a,
     a b c d e f g h i j k l m n,
     Item Item Item Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T T T T,
@@ -291,6 +346,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap15,
+    a,
     a b c d e f g h i j k l m n o,
     Item Item Item Item Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T T T T T,
@@ -298,6 +354,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap16,
+    a,
     a b c d e f g h i j k l m n o p,
     Item Item Item Item Item Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T T T T T T,
@@ -347,6 +404,15 @@ mod tests {
     }
 
     #[test]
+    fn test_find() {
+        let mut a = (3, 3, 5, 3);
+        if let Some(x) = a.by_ref_mut().find(|&&mut x| x == 5) {
+            *x = 3
+        }
+        assert!(a.same());
+    }
+
+    #[test]
     fn test_fold() {
         let a = (3, 3, 3, 3);
         let sum = a.fold(0, |sum, x| sum + x);
@@ -357,6 +423,7 @@ mod tests {
     fn test_into_vec() {
         assert_eq!((3, 3, 3).into_vec(), vec![3, 3, 3]);
     }
+
     #[test]
     fn test_map() {
         let a = (3, 3, 3);
@@ -366,5 +433,11 @@ mod tests {
             x + cnt
         });
         assert_eq!(b, (4, 5, 6))
+    }
+
+    #[test]
+    fn test_same() {
+        let a = (3, 3, 3);
+        assert!(a.same());
     }
 }
