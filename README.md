@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/tuple-map/badge.svg)](https://docs.rs/tuple-map)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-This library provides iterator-like utilities for `map`, `fold`, `for_each`, and etc., for tuple.
+This library provides iterator-like utility methods like `map`, `fold`, `for_each`, and etc., for tuple.
 
 # Example
 
@@ -16,6 +16,16 @@ fn main() {
     let (x, y) = (x, y).map(|a| a + 5);
     assert_eq!(x, 8);
     assert_eq!(y, 9);
+    
+    let v = (3, 4, 5, 6).fold(vec![], |mut v, x| {
+        if x % 3 == 0 {
+            v.push(x);
+        }
+        v
+    });
+    assert_eq!(v, vec![3, 6]);
+    
+    assert!((3, 3, 3).same());
 }
 
 ```
