@@ -26,6 +26,8 @@ fn main() {
     assert_eq!(v, vec![3, 6]);
     
     assert!((3, 3, 3).same());
+    
+    assert_eq!((3, 4, 5).nth(1), Some(4));
 }
 
 ```
