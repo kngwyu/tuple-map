@@ -137,6 +137,14 @@ macro_rules! impl_tuple_map {
             where
                 F: FnMut(Self::Item) -> B;
 
+            /// return nth element in the tuple.
+            /// # Example
+            /// ```ignore
+            /// let a = (3, 4, 5, ..);
+            /// assert_eq!(a.nth(2), Some(5));
+            /// ```
+            fn nth(self, i: usize) -> Option<Self::Item>;
+
             /// Checks if all elements of the tuple is same.
             /// # Example
             /// ```ignore
@@ -204,12 +212,20 @@ macro_rules! impl_tuple_map {
                 let ($($name,)*) = self;
                 $(f($name);)*
             }
-
+            
             fn into_vec(self) -> Vec<Self::Item> {
                 let ($($name,)*) = self;
                 let mut v = Vec::new();
                 $(v.push($name);)*
                 v
+            }
+
+
+            fn nth(self, i: usize) -> Option<Self::Item> {
+                let ($($name,)*) = self;
+                let mut _cnt = 0;
+                $(if _cnt == i { return Some($name) } else { _cnt += 1 })*
+                None
             }
             
             fn map<B, F>(self, mut f: F) -> ($($other, )*)
@@ -433,6 +449,12 @@ mod tests {
             x + cnt
         });
         assert_eq!(b, (4, 5, 6))
+    }
+
+    #[test]
+    fn test_nth() {
+        let a = (3, 4, 5, 6);
+        assert_eq!(a.nth(2), Some(5));
     }
 
     #[test]
