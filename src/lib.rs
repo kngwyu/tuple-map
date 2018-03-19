@@ -16,7 +16,13 @@
 //! like `TupleMap1`, `TupleMap2`,..., by macro, so same docs are generated for each trait.
 
 macro_rules! impl_tuple_map {
-    ($trait: ident, $first:ident, $($name: ident)+ , $($item: ident)+, $($self: ident)+ , $($other: ident)+) => {
+    ($trait: ident,
+     $first:ident,
+     $($name: ident)+,
+     $($name2: ident)+,
+     $($item: ident)+,
+     $($self: ident)+,
+     $($other: ident)+) => {
         pub trait $trait {
             type Item;
 
@@ -118,6 +124,10 @@ macro_rules! impl_tuple_map {
             where
                 F: FnMut(Self::Item) -> ();
 
+            /// return Self.
+            /// It's not intended to used by user.
+            fn id(self) -> ($(Self::$item,)*);
+            
             /// Convert tuple into Vec.
             /// # Example
             /// ```ignore
@@ -154,6 +164,111 @@ macro_rules! impl_tuple_map {
             fn same(self) -> bool
             where
                 Self::Item: PartialEq;
+
+            /// Takes i and checks if all elements of the tuple is same as i.
+            /// # Example
+            /// ```ignore
+            /// let a = (3, 3, 3, ...);
+            /// assert!(a.same_as(3));
+            /// ```
+            fn same_as(self, i: Self::Item) -> bool
+            where
+                Self::Item: PartialEq;
+
+            /// Takes `(a, a, a, ...)` and `(b, b, b, ...)` then returns `((a, b), (a, b), (a, b), ...)` 
+            /// # Example
+            /// ```ignore
+            /// let a = (3, 4, 5, ...);
+            /// let b = ('a', 'b', 'c', ...);
+            /// assert_eq!(a.zip(b), ((3, 'a'), (4, 'b'), (5, 'c'), ...));
+            /// ```
+            fn zip<U, B>(self, other: U) -> ($((Self::$item, $other),)*)
+            where
+                U: $trait<Item = B>;
+
+            /// Takes `(a, a, a, ...)` and `(b, b, b, ...)` and closure f,
+            /// then returns `(f(a, b), f(a, b), f(a, b), ...)` 
+            /// # Example
+            /// ```ignore
+            /// let a = (3, 4, 5, ...);
+            /// let b = ('a', 'b', 'c', ...);
+            /// assert_eq!(
+            ///     a.zipf(b, |x, y| format!("{}{}", x, y)),
+            ///     ("3a", "4b", "5c", ...).map(|x| x.to_owned())
+            /// );
+            /// ```
+            fn zipf<U, I, F, B>(self, other: U, f: F) -> ($($other,)*)
+            where
+                U: $trait<Item = I>,
+                F: FnMut(Self::Item, I) -> B;
+
+            /// Takes `(a, a, a, ...)` and `(b, b, b, ...)`,
+            /// then returns `(a + b, a + b, a + b, ...)` 
+            /// # Example
+            /// ```ignore
+            /// let a = (3, 4, 5, ...);
+            /// let b = (7, 8, 9, ....)
+            /// assert_eq!(a.add(b), (10, 12, 14, ...));
+            /// ```
+            fn add<U, I, B>(self, other: U) -> ($($other,)*)
+            where
+                U: $trait<Item = I>,
+                Self::Item: ::std::ops::Add<I, Output = B>,
+                Self: Sized,
+            {
+                self.zipf(other, |a, b| a + b)
+            }
+
+            /// Takes `(a, a, a, ...)` and `(b, b, b, ...)`,
+            /// then returns `(a - b, a - b, a - b, ...)` 
+            /// # Example
+            /// ```ignore
+            /// let a = (7, 8, 9, ....);
+            /// let b = (3, 4, 5, ....);
+            /// assert!(a.sub(b).same());
+            /// ```
+            fn sub<U, I, B>(self, other: U) -> ($($other,)*)
+            where
+                U: $trait<Item = I>,
+                Self::Item: ::std::ops::Sub<I, Output = B>,
+                Self: Sized,
+            {
+                self.zipf(other, |a, b| a - b)
+            }
+
+            /// Takes `(a, a, a, ...)` and `(b, b, b, ...)`,
+            /// then returns `(a * b, a * b, a * b, ...)` 
+            /// # Example
+            /// ```ignore
+            /// let a = (7, 8, 9, ....);
+            /// let b = (3, 4, 5, ....);
+            /// assert_eq!(a.mul(b), (21, 32, 45, ...));
+            /// ```
+            fn mul<U, I, B>(self, other: U) -> ($($other,)*)
+            where
+                U: $trait<Item = I>,
+                Self::Item: ::std::ops::Mul<I, Output = B>,
+                Self: Sized,
+            {
+                self.zipf(other, |a, b| a * b)
+            }
+
+            /// Takes `(a, a, a, ...)` and `(b, b, b, ...)`,
+            /// then returns `(a * b, a * b, a * b, ...)` 
+            /// # Example
+            /// ```ignore
+            /// let a = (6, 8, 10, ....);
+            /// let b = (3, 4, 5, ....);
+            /// assert!(a.div(b).same());
+            /// ```
+            fn div<U, I, B>(self, other: U) -> ($($other,)*)
+            where
+                U: $trait<Item = I>,
+                Self::Item: ::std::ops::Div<I, Output = B>,
+                Self: Sized,
+            {
+                self.zipf(other, |a, b| a / b)
+            }
         }
         
         impl<T> $trait for ($($self, )*) {
@@ -212,6 +327,11 @@ macro_rules! impl_tuple_map {
                 let ($($name,)*) = self;
                 $(f($name);)*
             }
+
+            fn id(self) -> ($(Self::$item,)*) {
+                let ($($name,)*) = self;
+                ($($name,)*)
+            }
             
             fn into_vec(self) -> Vec<Self::Item> {
                 let ($($name,)*) = self;
@@ -244,6 +364,34 @@ macro_rules! impl_tuple_map {
                 $(if $name != $first { return false } )*
                 true
             }
+
+            fn same_as(self, i: Self::Item) -> bool
+            where
+                Self::Item: PartialEq
+            {
+                let ($($name,)*) = self;
+                $(if $name != i { return false })*
+                true
+            }
+
+            fn zip<U, B>(self, other: U) -> ($((Self::$item, $other),)*)
+            where
+                U: $trait<Item = B>
+            {
+                let ($($name,)*) = self;
+                let ($($name2,)*) = other.id();
+                ($(($name, $name2),)*)
+            }
+
+            fn zipf<U, I, F, B>(self, other: U, mut f: F) -> ($($other,)*)
+            where
+                U: $trait<Item = I>,
+                F: FnMut(Self::Item, I) -> B
+            {
+                let ($($name,)*) = self;
+                let ($($name2,)*) = other.id();
+                ($(f($name, $name2),)*)
+            }
         }
     };
 }
@@ -252,6 +400,7 @@ impl_tuple_map!{
     TupleMap1,
     a,
     a,
+    a2,
     Item,
     T,
     B
@@ -260,6 +409,7 @@ impl_tuple_map!{
     TupleMap2,
     a,
     a b,
+    a2 b2,
     Item Item,
     T T,
     B B
@@ -268,6 +418,7 @@ impl_tuple_map!{
     TupleMap3,
     a,
     a b c,
+    a2 b2 c2,
     Item Item Item,
     T T T,
     B B B
@@ -276,6 +427,7 @@ impl_tuple_map!{
     TupleMap4,
     a,
     a b c d,
+    a2 b2 c2 d2,
     Item Item Item Item,
     T T T T,
     B B B B
@@ -284,6 +436,7 @@ impl_tuple_map!{
     TupleMap5,
     a,
     a b c d e,
+    a2 b2 c2 d2 e2,
     Item Item Item Item Item,
     T T T T T,
     B B B B B
@@ -292,6 +445,7 @@ impl_tuple_map!{
     TupleMap6,
     a,
     a b c d e f,
+    a2 b2 c2 d2 e2 f2,
     Item Item Item Item Item Item,
     T T T T T T,
     B B B B B B
@@ -300,6 +454,7 @@ impl_tuple_map!{
     TupleMap7,
     a,
     a b c d e f g,
+    a2 b2 c2 d2 e2 f2 g2,
     Item Item Item Item Item Item Item,
     T T T T T T T,
     B B B B B B B
@@ -308,6 +463,7 @@ impl_tuple_map!{
     TupleMap8,
     a,
     a b c d e f g h,
+    a2 b2 c2 d2 e2 f2 g2 h2,
     Item Item Item Item Item Item Item Item,
     T T T T T T T T,
     B B B B B B B B
@@ -316,6 +472,7 @@ impl_tuple_map!{
     TupleMap9,
     a,
     a b c d e f g h i,
+    a2 b2 c2 d2 e2 f2 g2 h2 i2,
     Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T,
     B B B B B B B B B
@@ -324,6 +481,7 @@ impl_tuple_map!{
     TupleMap10,
     a,
     a b c d e f g h i j,
+    a2 b2 c2 d2 e2 f2 g2 h2 i2 j2,
     Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T,
     B B B B B B B B B B
@@ -332,6 +490,7 @@ impl_tuple_map!{
     TupleMap11,
     a,
     a b c d e f g h i j k,
+    a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2,
     Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T,
     B B B B B B B B B B B
@@ -340,6 +499,7 @@ impl_tuple_map!{
     TupleMap12,
     a,
     a b c d e f g h i j k l,
+    a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2,
     Item Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T T,
     B B B B B B B B B B B B
@@ -348,6 +508,7 @@ impl_tuple_map!{
     TupleMap13,
     a,
     a b c d e f g h i j k l m,
+    a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2,
     Item Item Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T T T,
     B B B B B B B B B B B B B
@@ -356,6 +517,7 @@ impl_tuple_map!{
     TupleMap14,
     a,
     a b c d e f g h i j k l m n,
+    a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2 n2,
     Item Item Item Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T T T T,
     B B B B B B B B B B B B B B
@@ -364,6 +526,7 @@ impl_tuple_map!{
     TupleMap15,
     a,
     a b c d e f g h i j k l m n o,
+    a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2 n2 o2,
     Item Item Item Item Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T T T T T,
     B B B B B B B B B B B B B B B
@@ -372,6 +535,7 @@ impl_tuple_map!{
     TupleMap16,
     a,
     a b c d e f g h i j k l m n o p,
+    a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2 n2 o2 p2,
     Item Item Item Item Item Item Item Item Item Item Item Item Item Item Item Item,
     T T T T T T T T T T T T T T T T,
     B B B B B B B B B B B B B B B B
@@ -461,5 +625,53 @@ mod tests {
     fn test_same() {
         let a = (3, 3, 3);
         assert!(a.same());
+    }
+
+    #[test]
+    fn test_same_as() {
+        let a = (3, 3, 3);
+        assert!(a.same_as(3));
+    }
+
+    #[test]
+    fn test_zip() {
+        let a = (1, 2, 3);
+        let b = ("a", "b", "c");
+        assert_eq!(a.zip(b), ((1, "a"), (2, "b"), (3, "c")));
+    }
+
+    #[test]
+    fn test_zipf() {
+        let a = (1, 2, 3);
+        let b = ("a", "b", "c");
+        assert_eq!(
+            a.zipf(b, |x, y| format!("{}{}", x, y)),
+            ("1a", "2b", "3c").map(|x| x.to_owned())
+        );
+    }
+
+    #[test]
+    fn test_add() {
+        let a = (3, 4, 5);
+        assert_eq!(a.add((3, 4, 5)), (6, 8, 10));
+    }
+
+    #[test]
+    fn test_sub() {
+        let a = (3, 4, 5);
+        assert!(a.sub((1, 2, 3)).same_as(2));
+    }
+
+    #[test]
+    fn test_mul() {
+        let a = (3, 4, 5);
+        assert_eq!(a.mul((1, 2, 3)), (3, 8, 15));
+    }
+
+    #[test]
+    fn test_div() {
+        let a = (6, 8, 10);
+        let b = (3, 4, 5);
+        assert!(a.div(b).same_as(2));
     }
 }
