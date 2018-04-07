@@ -1,6 +1,6 @@
 [package]
 name = "tuple-map"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["kngwyu <yuji.kngw.80s.revive@gmail.com>"]
 repository = "https://github.com/kngwyu/tuple-map"
 homepage = "https://github.com/kngwyu/tuple-map"

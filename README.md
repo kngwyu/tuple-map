@@ -28,6 +28,15 @@ fn main() {
     assert!((3, 3, 3).same());
     
     assert_eq!((3, 4, 5).nth(1), Some(4));
+
+    assert_eq!((3, 4, 5).add(1, 2, 3), (4, 6, 8));
+
+    let a = (1, 2, 3);
+    let b = ("a", "b", "c");
+    assert_eq!(
+        a.zipf(b, |x, y| format!("{}{}", x, y)),
+        ("1a", "2b", "3c").map(|x| x.to_owned())
+    );
 }
 
 ```
