@@ -37,6 +37,8 @@ fn main() {
         a.zipf(b, |x, y| format!("{}{}", x, y)),
         ("1a", "2b", "3c").map(|x| x.to_owned())
     );
+
+    assert_eq!(a.sum(), 6);
 }
 
 ```

@@ -14,10 +14,9 @@
 //! **Notes**
 //! This library defines different trait depending on the length of tuple,
 //! like `TupleMap1`, `TupleMap2`,..., by macro, so same docs are generated for each trait.
-
 macro_rules! impl_tuple_map {
     ($trait: ident,
-     $first:ident,
+     $($name_reduced: ident)*,
      $($name: ident)+,
      $($name2: ident)+,
      $($item: ident)+,
@@ -174,6 +173,16 @@ macro_rules! impl_tuple_map {
             fn same_as(self, i: Self::Item) -> bool
             where
                 Self::Item: PartialEq;
+
+            /// Takes `(a, b, c, ...)` then returns `a + b + c ...`
+            fn sum(self) -> Self::Item
+            where
+                 Self::Item: ::std::ops::AddAssign;
+
+            /// Takes `(a, b, c, ...)` then returns `a + b + c ...`
+            fn product(self) -> Self::Item
+            where
+                 Self::Item: ::std::ops::MulAssign;
 
             /// Takes `(a, a, a, ...)` and `(b, b, b, ...)` then returns `((a, b), (a, b), (a, b), ...)` 
             /// # Example
@@ -356,12 +365,13 @@ macro_rules! impl_tuple_map {
                 ($(f($name),)*)
             }
 
+            #[allow(unused_variables)]
             fn same(self) -> bool
             where
                 Self::Item: PartialEq
             {
-                let ($($name,)*) = self;
-                $(if $name != $first { return false } )*
+                let (first, $($name_reduced,)*) = self;
+                $(if $name_reduced != first { return false } )*
                 true
             }
 
@@ -372,6 +382,26 @@ macro_rules! impl_tuple_map {
                 let ($($name,)*) = self;
                 $(if $name != i { return false })*
                 true
+            }
+
+            #[allow(unused_mut)]
+            fn sum(self) -> Self::Item
+            where
+                Self::Item: ::std::ops::AddAssign
+            {
+                let (mut acc, $($name_reduced,)*) = self;
+                $(acc += $name_reduced;)*
+                acc
+            }
+
+            #[allow(unused_mut)]
+            fn product(self) -> Self::Item
+            where
+                Self::Item: ::std::ops::MulAssign
+            {
+                let (mut acc, $($name_reduced,)*) = self;
+                $(acc *= $name_reduced;)*
+                acc
             }
 
             fn zip<U, B>(self, other: U) -> ($((Self::$item, $other),)*)
@@ -398,7 +428,7 @@ macro_rules! impl_tuple_map {
 
 impl_tuple_map!{
     TupleMap1,
-    a,
+    ,
     a,
     a2,
     Item,
@@ -407,7 +437,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap2,
-    a,
+    b,
     a b,
     a2 b2,
     Item Item,
@@ -416,7 +446,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap3,
-    a,
+    b c,
     a b c,
     a2 b2 c2,
     Item Item Item,
@@ -425,7 +455,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap4,
-    a,
+    b c d,
     a b c d,
     a2 b2 c2 d2,
     Item Item Item Item,
@@ -434,7 +464,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap5,
-    a,
+    b c d e,
     a b c d e,
     a2 b2 c2 d2 e2,
     Item Item Item Item Item,
@@ -443,7 +473,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap6,
-    a,
+    b c d e f,
     a b c d e f,
     a2 b2 c2 d2 e2 f2,
     Item Item Item Item Item Item,
@@ -452,7 +482,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap7,
-    a,
+    b c d e f g,
     a b c d e f g,
     a2 b2 c2 d2 e2 f2 g2,
     Item Item Item Item Item Item Item,
@@ -461,7 +491,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap8,
-    a,
+    b c d e f g h,
     a b c d e f g h,
     a2 b2 c2 d2 e2 f2 g2 h2,
     Item Item Item Item Item Item Item Item,
@@ -470,7 +500,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap9,
-    a,
+    b c d e f g h i,
     a b c d e f g h i,
     a2 b2 c2 d2 e2 f2 g2 h2 i2,
     Item Item Item Item Item Item Item Item Item,
@@ -479,7 +509,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap10,
-    a,
+    b c d e f g h i j,
     a b c d e f g h i j,
     a2 b2 c2 d2 e2 f2 g2 h2 i2 j2,
     Item Item Item Item Item Item Item Item Item Item,
@@ -488,7 +518,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap11,
-    a,
+    b c d e f g h i j k,
     a b c d e f g h i j k,
     a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2,
     Item Item Item Item Item Item Item Item Item Item Item,
@@ -497,7 +527,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap12,
-    a,
+    b c d e f g h i j k l,
     a b c d e f g h i j k l,
     a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2,
     Item Item Item Item Item Item Item Item Item Item Item Item,
@@ -506,7 +536,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap13,
-    a,
+    b c d e f g h i j k l m,
     a b c d e f g h i j k l m,
     a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2,
     Item Item Item Item Item Item Item Item Item Item Item Item Item,
@@ -515,7 +545,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap14,
-    a,
+    b c d e f g h i j k l m n,
     a b c d e f g h i j k l m n,
     a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2 n2,
     Item Item Item Item Item Item Item Item Item Item Item Item Item Item,
@@ -524,7 +554,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap15,
-    a,
+    b c d e f g h i j k l m n o,
     a b c d e f g h i j k l m n o,
     a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2 n2 o2,
     Item Item Item Item Item Item Item Item Item Item Item Item Item Item Item,
@@ -533,7 +563,7 @@ impl_tuple_map!{
 }
 impl_tuple_map!{
     TupleMap16,
-    a,
+    b c d e f g h i j k l m n o p,
     a b c d e f g h i j k l m n o p,
     a2 b2 c2 d2 e2 f2 g2 h2 i2 j2 k2 l2 m2 n2 o2 p2,
     Item Item Item Item Item Item Item Item Item Item Item Item Item Item Item Item,
@@ -673,5 +703,17 @@ mod tests {
         let a = (6, 8, 10);
         let b = (3, 4, 5);
         assert!(a.div(b).same_as(2));
+    }
+
+    #[test]
+    fn test_sum() {
+        let a = (6, 8, 10);
+        assert_eq!(a.sum(), 24);
+    }
+
+    #[test]
+    fn test_prod() {
+        let a = (6, 8, 10);
+        assert_eq!(a.product(), 480);
     }
 }
