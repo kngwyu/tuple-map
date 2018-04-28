@@ -4,7 +4,9 @@
 [![Documentation](https://docs.rs/tuple-map/badge.svg)](https://docs.rs/tuple-map)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-This library provides iterator-like utility methods like `map`, `fold`, `for_each`, and etc., for tuple.
+This library provides iterator-like utility methods like `map`,
+`fold`, `for_each`, and etc., for tuples whose all elements are same
+type(i.e. `(T, T), (T, T, T), (T, T, T, T)...`)
 
 # Example
 
