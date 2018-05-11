@@ -184,6 +184,20 @@ macro_rules! impl_tuple_map {
             where
                  Self::Item: ::std::ops::MulAssign;
 
+            /// Takes `(a, b, c, ...)` then returns the maximum value of tuple.
+            /// This method is named `tmax` instead of `max`, to avoid overlap
+            /// to `std::cmp::ord::max`.
+            fn tmax(self) -> Self::Item
+            where
+                Self::Item: ::std::cmp::PartialOrd;
+
+            /// Takes `(a, b, c, ...)` then returns the minimum value of tuple.
+            /// This method is named `tmin` instead of `min`, to avoid overlap
+            /// to `std::cmp::ord::min`.
+            fn tmin(self) -> Self::Item
+            where
+                Self::Item: ::std::cmp::PartialOrd;
+            
             /// Takes `(a, a, a, ...)` and `(b, b, b, ...)` then returns `((a, b), (a, b), (a, b), ...)` 
             /// # Example
             /// ```ignore
@@ -401,6 +415,30 @@ macro_rules! impl_tuple_map {
             {
                 let (mut acc, $($name_reduced,)*) = self;
                 $(acc *= $name_reduced;)*
+                acc
+            }
+
+            #[allow(unused_mut)]
+            fn tmax(self) -> Self::Item
+            where
+                Self::Item: ::std::cmp::PartialOrd
+            {
+                let (mut acc, $($name_reduced,)*) = self;
+                $(if acc < $name_reduced {
+                    acc = $name_reduced;
+                })*
+                acc
+            }
+
+            #[allow(unused_mut)]
+            fn tmin(self) -> Self::Item
+            where
+                Self::Item: ::std::cmp::PartialOrd
+            {
+                let (mut acc, $($name_reduced,)*) = self;
+                $(if acc > $name_reduced {
+                    acc = $name_reduced;
+                })*
                 acc
             }
 
@@ -715,5 +753,17 @@ mod tests {
     fn test_prod() {
         let a = (6, 8, 10);
         assert_eq!(a.product(), 480);
+    }
+
+    #[test]
+    fn test_tmin() {
+        let a = (6, 8, 10);
+        assert_eq!(a.tmin(), 6);
+    }
+
+    #[test]
+    fn test_tmax() {
+        let a = (6, 8, 10);
+        assert_eq!(a.tmax(), 10);
     }
 }
