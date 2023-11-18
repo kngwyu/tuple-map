@@ -6,7 +6,9 @@
 
 This library provides iterator-like utility methods like `map`,
 `fold`, `for_each`, and etc., for tuples whose all elements are same
-type(i.e. `(T, T), (T, T, T), (T, T, T, T)...`)
+type(i.e. `(T, T), (T, T, T), (T, T, T, T)...`). If you want to map individual
+elements of arbitrary tuples `(T, U), (T, U, V)...`, use
+[map_tuple](https://crates.io/crates/map_tuple).
 
 # Example
 
